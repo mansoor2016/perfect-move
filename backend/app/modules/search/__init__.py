@@ -1,0 +1,1 @@
+# Search module for property search functionality
