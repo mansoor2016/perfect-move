@@ -4,6 +4,10 @@
 
 The Advanced Property Search platform is a web application that enables home buyers and renters to search for properties using sophisticated filters that go beyond basic criteria offered by existing platforms like Rightmove and Zoopla. The system will integrate multiple data sources including property listings, geographic data, environmental data, and transportation information to provide users with a comprehensive search experience based on lifestyle and quality-of-life factors.
 
+In the MVP, we want to implement an intelligent, natural‑language–driven, multi‑constraint search that translates free‑form queries into structured criteria, applies a transparent multi‑objective ranking engine (e.g., price, size, commute time, amenity proximity, environmental quality, financial value proposition) with user‑adjustable weights, and visualises results on an interactive, layerable map. Data pipelines will emphasise provenance and freshness (lineage stamps and staleness flags) with graceful degradation when third‑party feeds are unavailable, and each result will include an explainable “why this home?” breakdown to build user trust and enable rapid iteration.
+
+The buyers of today are far more conscious of environmental and health related factors. Their wants and needs are more diverse, they need a property search platform that can leverage AI to narrow down their search and provide a better match for preferences. They don't need a list of 1000s properties within 20 miles, they need a list of the top 10 matches that meet all of their preferences. We want to aggregate mutliple data-sources into a singular page displayed in a digestable format to allow consumers to make informed decisions.
+
 ## Requirements
 
 ### Requirement 1
@@ -87,3 +91,43 @@ The Advanced Property Search platform is a web application that enables home buy
 3. WHEN a user returns to the platform THEN the system SHALL provide access to saved searches and favorite properties
 4. WHEN saved searches have new matching properties THEN the system SHALL optionally notify the user
 5. IF a user wants to modify saved searches THEN the system SHALL allow editing and updating search criteria
+
+### Requirement 8
+
+**User Story:** As a property searcher with multi‑stop daily routines, I want to constrain and rank homes by door‑to‑door travel times across multiple destinations (e.g., nursery → work → gym) with peak/off‑peak awareness and preferred transport modes, so that search results reflect my real‑world lifestyle.
+
+#### Acceptance Criteria
+
+1. WHEN a user configures a Commute Profile THEN the system SHALL allow adding 2–5 destinations with labels (e.g., “Nursery”, “Work”, “Gym”), selecting preferred modes (walking, cycling, public transport, driving), defining peak/off‑peak windows and active weekdays, and adjusting sliders for max detour per stop and max per‑leg / total chain time.
+2. WHEN the system computes commute times for a property THEN it SHALL calculate door‑to‑door durations including access (walk/drive/park), wait/interchange times from timetables, in‑vehicle time, and egress to the destination; AND it SHALL support AM (property → … → last stop) and PM (reverse) chains, providing median and p95 estimates for each leg and the total chain.
+3. WHEN a user applies a Commute Profile to a search THEN the system SHALL filter properties that meet required thresholds (per‑leg and total) and SHALL score properties that meet preferred thresholds using user‑adjustable weights for commute; AND the ranking.
+4. WHEN a property or search area is displayed on the map THEN the system SHALL render isochrones per destination (distinct colours, legend) and a chained‑route preview with per‑leg tooltips.
+5. WHEN commute constraints are mutually exclusive or yield no results THEN the system SHALL display a clear notice identifying which constraints failed and SHALL offer actionable relaxations (e.g., extend total chain by 5–10 minutes, relax a specific leg, broaden peak window, switch/allow an additional mode).
+6. WHEN a user saves a search THEN the associated Commute Profile (destinations, modes, thresholds, windows, weights) SHALL be persisted; AND WHEN a user shares a search link THEN recipients who open it SHALL see the same commute constraints applied (with destination precision reduced to street/postcode unless the sender opts to share exact points).
+7. WHEN presenting commute results THEN the system SHALL provide a textual breakdown (screen‑reader friendly) of each leg and total chain and SHALL be fully keyboard navigable for configuring and applying the Commute Profile.
+11. WHEN validating routing accuracy THEN the system SHALL maintain a median absolute error within ±10% or ±5 minutes (whichever is greater) against sampled ground‑truth journeys per mode/window and SHALL include automated tests for chaining logic, timetable fallbacks, and edge cases (e.g., last train, station closures).
+
+### Requirement 9
+
+**User Story:** As a property searcher, I want transparent multi‑objective ranking with explainable results and adjustable preference weights, so that I can understand and control how my lifestyle priorities affect the results.
+
+#### Acceptance Criteria
+
+1. WHEN results are displayed THEN each property card/details view SHALL include a concise "Why this property?" explanation summarising how it meets the user’s criteria, with a per‑criterion score breakdown (e.g., price fit, commute, amenities, environmental factors, property features).
+2. WHEN a user adjusts preference weights across objective categories (e.g., price, commute time, amenity proximity, environmental quality, property features) THEN the ranking SHALL update within 1 second for up to 500 results and within 2 seconds for larger result sets.
+3. WHEN constraints are mutually exclusive or yield few/no results THEN the system SHALL display a conflict/exhaustion notice and offer actionable relaxations (e.g., increase budget by 5–10%, expand radius by 0.5–1 km, relax commute by 5–10 minutes).
+4. WHEN data used in scoring is stale or unavailable THEN the system SHALL surface a staleness/missing‑data badge at both search and property levels, including last‑refreshed timestamps per data source.
+5. WHEN a user saves a search THEN the system SHALL persist the weight profile with the search and allow sharing; recipients who open the shared link SHALL see the same criteria and weights applied.
+6. WHEN a user inspects a score component THEN the system SHALL display the underlying metric (e.g., "12 min walk to [Station]; AQI 24 (Good); 250 m to [Park]") in an info panel, with source attribution available.
+
+### Requirement 10
+
+**User Story:** As a buyer or investor (and, where relevant, a long‑term renter), I want a single Financial Index Score (FIS) per property that summarises its value proposition, and an expandable Financials card that shows transparent, configurable metrics and assumptions, so that I can quickly compare options and make informed, long‑term decisions.
+
+#### Acceptance Criteria
+
+1. WHEN search results are displayed THEN the system SHALL show, on each property card (and on map pins where space allows), a Financial Index Score (FIS) from 0–100 with an A–E band and tooltip; AND WHEN a user clicks the FIS badge or a visible Financials affordance THEN the system SHALL open an in‑place Financials card (drawer or modal) without page navigation.
+2. WHEN a user opens the Financials card for a for‑sale listing THEN the system SHALL display at minimum: (a) Value vs Area (price per m²/ft²; local median/percentiles; 3–5 nearby comparables with date/size/PPSF); (b) Price History & Liquidity (listing price changes; time‑on‑market vs area benchmark; 24‑month PPSF volatility); (c) Mortgage & Purchase Costs (configurable mortgage estimate, SDLT, legal/valuation/agent fees, upfront cash); (d) Running Costs (council tax band & cost; service charge & ground rent if leasehold; buildings insurance estimate; EPC‑informed energy cost range); (e) Yield (Investor View) (market rent range, gross and net yield after assumed costs, rent/bedroom, vacancy assumption); and (f) Risk Signals (flood‑risk category; lease length & flagged thresholds; optional area crime‑rate index; days‑to‑sell distribution).
+3. WHEN a user opens the Financials card for a rental listing THEN the system SHALL display at minimum: (a) Affordability (rent‑to‑income ratio vs local median; projected annual rent; deposit & fees estimate); (b) Running Costs (council tax; EPC‑informed utilities; broadband availability/speed tier); and (c) Stability & Risk (area rent trend over 12–24 months; tenancy type indicators if available; time‑to‑let benchmarks).
+4. WHEN a user opens the Financials card THEN the system SHALL display a “How this score is calculated” panel showing sub‑scores, weights, and a formula overview with each sub‑score’s contribution to the FIS; AND WHEN any metric is shown THEN the system SHALL include source attribution and last‑refreshed timestamps and SHALL visibly badge missing or stale data.
+5. WHEN a user adjusts assumptions (including interest rate, term, LTV, holding period, voids, service charge, insurance, expected rent) THEN the system SHALL recompute the FIS and all dependent metrics and SHALL update the Financials card immediately; AND WHEN defaults are requested THEN the system SHALL restore defaults and SHALL allow saving/sharing of the active assumptions with the user profile.
