@@ -63,15 +63,25 @@
   - Write unit tests for ingestion pipeline and background job processing
   - _Requirements: 4.1, 4.4, 4.5_
 
-- [ ] 4. Create geospatial module for location-based services
-- [ ] 4.1 Implement distance calculation and proximity services
+- [x] 4. Create geospatial module for location-based services
+
+
+
+
+
+- [x] 4.1 Implement distance calculation and proximity services
+
+
+
   - Code distance calculation functions using PostGIS for straight-line and walking distances
   - Integrate with Mapbox APIs for routing and commute isochrone calculations
   - Create proximity query functions for amenities using spatial indexes
   - Write unit tests for distance calculations and geospatial query accuracy
   - _Requirements: 1.2, 5.1, 5.3, 5.4_
 
-- [ ] 4.2 Build environmental and transport data integration
+- [x] 4.2 Build environmental and transport data integration
+
+
   - Create services for fetching air quality, flood risk, and crime statistics
   - Integrate with TfL APIs for public transport information
   - Implement environmental data caching and freshness monitoring

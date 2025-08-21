@@ -113,7 +113,7 @@ This is the initial project structure setup. The following tasks are planned:
 1. ✅ Project structure and Docker configuration
 2. ✅ Database schema and data models
 3. ✅ External API integration for property data
-4. 🔄 Geospatial services and calculations
+4. ✅ Geospatial services and calculations
 5. 🔄 Search functionality with Elasticsearch
 6. 🔄 Frontend components and user interface
 7. 🔄 User management and authentication
