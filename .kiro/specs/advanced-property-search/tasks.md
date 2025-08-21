@@ -88,15 +88,24 @@
   - Write unit tests for environmental data fetching and transport integration
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 5. Set up Elasticsearch for advanced search capabilities
-- [ ] 5.1 Configure Elasticsearch with property and geospatial mapping
+- [x] 5. Set up Elasticsearch for advanced search capabilities
+
+
+
+
+
+- [x] 5.1 Configure Elasticsearch with property and geospatial mapping
+
+
   - Create Elasticsearch index mapping for properties with geo_point fields
   - Implement property data indexing pipeline from PostgreSQL to Elasticsearch
   - Configure text analyzers for full-text search on property descriptions
   - Write integration tests for Elasticsearch indexing and search functionality
   - _Requirements: 1.1, 1.3, 6.1, 6.3_
 
-- [ ] 5.2 Build search module with complex query generation
+- [x] 5.2 Build search module with complex query generation
+
+
   - Implement search query builder combining text, geospatial, and lifestyle filters
   - Create ranking engine that combines price, match score, proximity, and freshness
   - Add search result aggregations for faceted filtering
