@@ -1,0 +1,1 @@
+# Ingestion adapters for external property APIs

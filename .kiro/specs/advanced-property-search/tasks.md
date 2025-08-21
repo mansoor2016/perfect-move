@@ -39,15 +39,24 @@
   - Write unit tests for data model validation and serialization
   - _Requirements: 1.1, 1.5, 4.2, 4.3_
 
-- [ ] 3. Build ingestion module for external property data
-- [ ] 3.1 Create property listing API adapters for Rightmove and Zoopla
+- [x] 3. Build ingestion module for external property data
+
+
+
+
+
+- [x] 3.1 Create property listing API adapters for Rightmove and Zoopla
+
+
   - Implement HTTP clients with rate limiting and retry logic with exponential backoff
   - Write data normalization pipeline to convert external formats to internal Property schema
   - Create deduplication logic using fuzzy address matching and geocoding
   - Add lineage stamping for source tracking, sync time, and reliability scoring
   - _Requirements: 4.1, 4.2, 4.4, 4.5_
 
-- [ ] 3.2 Implement Celery/RQ background job system for data ingestion
+- [x] 3.2 Implement Celery/RQ background job system for data ingestion
+
+
   - Set up Celery with Redis as message broker for background property sync jobs
   - Create incremental sync jobs that only process changed property data
   - Implement data quality validation pipeline with conflict resolution
