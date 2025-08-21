@@ -112,8 +112,13 @@
   - Write unit tests for query generation and ranking algorithm
   - _Requirements: 1.1, 1.3, 6.1, 6.3_
 
-- [ ] 6. Create intelligent search suggestion system
-- [ ] 6.1 Implement natural language processing for search parsing
+- [-] 6. Create intelligent search suggestion system
+
+
+- [x] 6.1 Implement natural language processing for search parsing
+
+
+
   - Build text parsing engine to extract location, amenity, and filter criteria from user input
   - Create autocomplete API with intelligent filter suggestions and examples
   - Implement suggestion database with common search patterns

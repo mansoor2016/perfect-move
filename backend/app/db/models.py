@@ -214,3 +214,73 @@ class EnvironmentalData(Base):
         Index('idx_environmental_location', 'location', postgresql_using='gist'),
         Index('idx_environmental_area_name', 'area_name'),
     )
+
+
+class SearchSuggestionPattern(Base):
+    """Common search patterns and suggestions for autocomplete"""
+    __tablename__ = "search_suggestion_patterns"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Suggestion content
+    text = Column(String(500), nullable=False)
+    description = Column(String(1000))
+    category = Column(String(100), nullable=False)  # location, amenity, price, etc.
+    
+    # Associated filters (stored as JSON)
+    filters = Column(JSON)
+    
+    # Usage statistics
+    usage_count = Column(Integer, default=0)
+    success_rate = Column(Float, default=0.0)  # How often this leads to successful searches
+    
+    # Metadata
+    is_active = Column(Boolean, default=True)
+    priority = Column(Integer, default=0)  # Higher priority suggestions shown first
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_search_suggestions_category', 'category'),
+        Index('idx_search_suggestions_active', 'is_active'),
+        Index('idx_search_suggestions_priority', 'priority'),
+        Index('idx_search_suggestions_text', 'text'),
+    )
+
+
+class SearchQueryLog(Base):
+    """Log of search queries for analytics and improving suggestions"""
+    __tablename__ = "search_query_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    
+    # Query information
+    query_text = Column(Text, nullable=False)
+    parsed_entities = Column(JSON)  # Extracted entities from NLP
+    search_criteria = Column(JSON)  # Final search criteria used
+    
+    # Results and user interaction
+    results_count = Column(Integer)
+    user_clicked_result = Column(Boolean, default=False)
+    user_saved_search = Column(Boolean, default=False)
+    
+    # Performance metrics
+    parse_time_ms = Column(Integer)
+    search_time_ms = Column(Integer)
+    
+    # User context (optional)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=True)
+    session_id = Column(String(100))
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_search_logs_created_at', 'created_at'),
+        Index('idx_search_logs_user_id', 'user_id'),
+        Index('idx_search_logs_session_id', 'session_id'),
+    )
