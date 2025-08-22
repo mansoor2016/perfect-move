@@ -6,7 +6,17 @@ import { SearchCriteria } from '@/types/property'
 import { it } from 'node:test'
 import { it } from 'node:test'
 import { it } from 'node:test'
+import { it } from 'node:test'
+import { it } from 'node:test'
 import { describe } from 'node:test'
+import { it } from 'node:test'
+import { it } from 'node:test'
+import { describe } from 'node:test'
+import { it } from 'node:test'
+import { it } from 'node:test'
+import { it } from 'node:test'
+import { it } from 'node:test'
+import { it } from 'node:test'
 import { it } from 'node:test'
 import { it } from 'node:test'
 import { it } from 'node:test'
@@ -554,7 +564,7 @@ describe('AdvancedFilters', () => {
       render(<AdvancedFilters {...defaultProps} criteria={criteriaWithShortCommute} />)
       
       expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
-      expect(screen.getByText(/Very short commute times may limit/)).toBeInTheDocument()
+      expect(screen.getByText(/Very short commute times \(under 10 minutes\)/)).toBeInTheDocument()
     })
 
     it('warns about strict air quality requirements', () => {
@@ -569,6 +579,113 @@ describe('AdvancedFilters', () => {
       
       expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
       expect(screen.getByText(/Very strict air quality requirements/)).toBeInTheDocument()
+    })
+
+    it('warns about strict noise requirements', () => {
+      const criteriaWithStrictNoise = {
+        ...defaultCriteria,
+        environmental_filters: {
+          max_noise_level: 35
+        }
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithStrictNoise} />)
+      
+      expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
+      expect(screen.getByText(/Very strict noise requirements/)).toBeInTheDocument()
+    })
+
+    it('shows error for commute filters without transport modes', () => {
+      const criteriaWithEmptyTransport = {
+        ...defaultCriteria,
+        commute_filters: [{
+          destination_address: 'London Bridge',
+          max_commute_minutes: 30,
+          transport_modes: []
+        }]
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithEmptyTransport} />)
+      
+      expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
+      expect(screen.getByText(/must have at least one transport mode/)).toBeInTheDocument()
+    })
+
+    it('shows error for commute filters without destination', () => {
+      const criteriaWithEmptyDestination = {
+        ...defaultCriteria,
+        commute_filters: [{
+          destination_address: '',
+          max_commute_minutes: 30,
+          transport_modes: ['walking']
+        }]
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithEmptyDestination} />)
+      
+      expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
+      expect(screen.getByText(/must have a destination address/)).toBeInTheDocument()
+    })
+
+    it('shows error for proximity filters with zero distance', () => {
+      const criteriaWithZeroDistance = {
+        ...defaultCriteria,
+        proximity_filters: [{
+          amenity_type: 'park' as const,
+          max_distance: 0,
+          distance_unit: 'meters' as const,
+          walking_distance: true
+        }]
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithZeroDistance} />)
+      
+      expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
+      expect(screen.getByText(/must have a distance greater than 0/)).toBeInTheDocument()
+    })
+
+    it('warns about excessive number of filters', () => {
+      const criteriaWithManyFilters = {
+        ...defaultCriteria,
+        proximity_filters: Array(8).fill(null).map((_, i) => ({
+          amenity_type: 'park' as const,
+          max_distance: 1000,
+          distance_unit: 'meters' as const,
+          walking_distance: true
+        })),
+        commute_filters: Array(5).fill(null).map((_, i) => ({
+          destination_address: `Destination ${i}`,
+          max_commute_minutes: 30,
+          transport_modes: ['walking']
+        }))
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithManyFilters} />)
+      
+      expect(screen.getByTestId('filter-conflicts')).toBeInTheDocument()
+      expect(screen.getByText(/Large number of filters may impact search performance/)).toBeInTheDocument()
+    })
+  })
+
+  describe('Active Filters Summary', () => {
+    it('shows active filters summary when filters are applied', () => {
+      const criteriaWithFilters = {
+        ...defaultCriteria,
+        proximity_filters: [{ amenity_type: 'park' as const, max_distance: 500, distance_unit: 'meters' as const, walking_distance: true }],
+        environmental_filters: { max_air_pollution_level: 30, avoid_flood_risk: true },
+        commute_filters: [{ destination_address: 'London Bridge Station', max_commute_minutes: 30, transport_modes: ['walking'] }]
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithFilters} />)
+      
+      expect(screen.getByTestId('active-filters-summary')).toBeInTheDocument()
+      expect(screen.getByText('Active Filters Summary')).toBeInTheDocument()
+    })
+
+    it('hides active filters summary when no filters are applied', () => {
+      render(<AdvancedFilters {...defaultProps} />)
+      
+      expect(screen.queryByTestId('active-filters-summary')).not.toBeInTheDocument()
     })
   })
 
@@ -594,6 +711,13 @@ describe('AdvancedFilters', () => {
       })
     })
 
+    it('disables clear button when no filters are active', () => {
+      render(<AdvancedFilters {...defaultProps} />)
+      
+      const clearButton = screen.getByTestId('clear-all-filters')
+      expect(clearButton).toBeDisabled()
+    })
+
     it('calls onApplyFilters when apply button is clicked', async () => {
       const user = userEvent.setup()
       render(<AdvancedFilters {...defaultProps} />)
@@ -601,6 +725,22 @@ describe('AdvancedFilters', () => {
       await user.click(screen.getByTestId('apply-filters'))
       
       expect(mockOnApplyFilters).toHaveBeenCalledTimes(1)
+    })
+
+    it('disables apply button when there are errors', () => {
+      const criteriaWithErrors = {
+        ...defaultCriteria,
+        commute_filters: [{
+          destination_address: '',
+          max_commute_minutes: 30,
+          transport_modes: []
+        }]
+      }
+      
+      render(<AdvancedFilters {...defaultProps} criteria={criteriaWithErrors} />)
+      
+      const applyButton = screen.getByTestId('apply-filters')
+      expect(applyButton).toBeDisabled()
     })
 
     it('calls onToggleVisibility when cancel button is clicked', async () => {

@@ -126,7 +126,7 @@ export default function AdvancedFilters({
     if (duplicateAmenities.length > 0) {
       newConflicts.push({
         type: 'warning',
-        message: `Duplicate amenity filters detected: ${duplicateAmenities.join(', ')}`,
+        message: `Duplicate amenity filters detected: ${duplicateAmenities.join(', ')}. Consider combining or removing duplicates.`,
         affectedFilters: ['proximity_filters']
       })
     }
@@ -137,7 +137,27 @@ export default function AdvancedFilters({
     if (shortCommutes.length > 0) {
       newConflicts.push({
         type: 'warning',
-        message: 'Very short commute times may limit available properties significantly',
+        message: 'Very short commute times (under 10 minutes) may limit available properties significantly',
+        affectedFilters: ['commute_filters']
+      })
+    }
+
+    // Check for commute filters without transport modes
+    const emptyTransportModes = commuteFilters.filter(f => f.transport_modes.length === 0)
+    if (emptyTransportModes.length > 0) {
+      newConflicts.push({
+        type: 'error',
+        message: 'Commute filters must have at least one transport mode selected',
+        affectedFilters: ['commute_filters']
+      })
+    }
+
+    // Check for commute filters without destination
+    const emptyDestinations = commuteFilters.filter(f => !f.destination_address.trim())
+    if (emptyDestinations.length > 0) {
+      newConflicts.push({
+        type: 'error',
+        message: 'Commute filters must have a destination address specified',
         affectedFilters: ['commute_filters']
       })
     }
@@ -147,8 +167,36 @@ export default function AdvancedFilters({
     if (envFilters?.max_air_pollution_level && envFilters.max_air_pollution_level < 15) {
       newConflicts.push({
         type: 'warning',
-        message: 'Very strict air quality requirements may severely limit results',
+        message: 'Very strict air quality requirements (AQI < 15) may severely limit results',
         affectedFilters: ['environmental_filters']
+      })
+    }
+
+    if (envFilters?.max_noise_level && envFilters.max_noise_level < 40) {
+      newConflicts.push({
+        type: 'warning',
+        message: 'Very strict noise requirements (< 40dB) may severely limit results in urban areas',
+        affectedFilters: ['environmental_filters']
+      })
+    }
+
+    // Check for proximity filters with zero distance
+    const zeroDistanceFilters = criteria.proximity_filters?.filter(f => f.max_distance === 0) || []
+    if (zeroDistanceFilters.length > 0) {
+      newConflicts.push({
+        type: 'error',
+        message: 'Proximity filters must have a distance greater than 0',
+        affectedFilters: ['proximity_filters']
+      })
+    }
+
+    // Check for excessive number of filters that might impact performance
+    const totalFilters = (criteria.proximity_filters?.length || 0) + (criteria.commute_filters?.length || 0)
+    if (totalFilters > 10) {
+      newConflicts.push({
+        type: 'warning',
+        message: 'Large number of filters may impact search performance. Consider using presets or reducing filters.',
+        affectedFilters: ['proximity_filters', 'commute_filters']
       })
     }
 
@@ -270,15 +318,21 @@ export default function AdvancedFilters({
 
       {/* Conflicts Display */}
       {conflicts.length > 0 && (
-        <div className="p-4 border-b border-gray-200" data-testid="filter-conflicts">
+        <div className="p-4 border-b border-gray-200" data-testid="filter-conflicts" role="alert" aria-live="polite">
           {conflicts.map((conflict, index) => (
             <div
               key={index}
-              className={`flex items-start gap-2 p-3 rounded-md ${conflict.type === 'error' ? 'bg-red-50 text-red-800' : 'bg-yellow-50 text-yellow-800'
+              className={`flex items-start gap-2 p-3 rounded-md mb-2 last:mb-0 ${conflict.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
                 }`}
+              role={conflict.type === 'error' ? 'alert' : 'status'}
             >
-              <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-              <span className="text-sm">{conflict.message}</span>
+              <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <div className="flex-1">
+                <span className="text-sm font-medium">
+                  {conflict.type === 'error' ? 'Error: ' : 'Warning: '}
+                </span>
+                <span className="text-sm">{conflict.message}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -662,12 +716,59 @@ export default function AdvancedFilters({
         )}
       </div>
 
+      {/* Active Filters Summary */}
+      {((criteria.proximity_filters?.length || 0) > 0 || 
+        (criteria.commute_filters?.length || 0) > 0 || 
+        criteria.environmental_filters) && (
+        <div className="p-4 border-t border-gray-200 bg-gray-50" data-testid="active-filters-summary">
+          <h4 className="text-sm font-medium text-gray-900 mb-2">Active Filters Summary</h4>
+          <div className="flex flex-wrap gap-2">
+            {(criteria.proximity_filters || []).map((filter, index) => (
+              <span
+                key={`proximity-${index}`}
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
+              >
+                {AMENITY_OPTIONS.find(opt => opt.value === filter.amenity_type)?.icon} {filter.max_distance}{filter.distance_unit === 'meters' ? 'm' : filter.distance_unit === 'kilometers' ? 'km' : 'mi'}
+              </span>
+            ))}
+            {(criteria.commute_filters || []).map((filter, index) => (
+              <span
+                key={`commute-${index}`}
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800"
+              >
+                🚌 {filter.max_commute_minutes}min to {filter.destination_address.slice(0, 20)}...
+              </span>
+            ))}
+            {criteria.environmental_filters?.max_air_pollution_level && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                🌬️ AQI ≤ {criteria.environmental_filters.max_air_pollution_level}
+              </span>
+            )}
+            {criteria.environmental_filters?.max_noise_level && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                🔇 ≤ {criteria.environmental_filters.max_noise_level}dB
+              </span>
+            )}
+            {criteria.environmental_filters?.avoid_flood_risk && (
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                🌊 No flood risk
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
         <button
           onClick={clearAllFilters}
-          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="clear-all-filters"
+          disabled={
+            (criteria.proximity_filters?.length || 0) === 0 && 
+            (criteria.commute_filters?.length || 0) === 0 && 
+            !criteria.environmental_filters
+          }
         >
           Clear All Filters
         </button>
@@ -682,8 +783,14 @@ export default function AdvancedFilters({
           </button>
           <button
             onClick={onApplyFilters}
-            className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+            className={`px-4 py-2 text-sm rounded-md transition-colors ${
+              conflicts.some(c => c.type === 'error')
+                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
+            }`}
             data-testid="apply-filters"
+            disabled={conflicts.some(c => c.type === 'error')}
+            title={conflicts.some(c => c.type === 'error') ? 'Please fix errors before applying filters' : 'Apply filters to search'}
           >
             Apply Filters
           </button>
